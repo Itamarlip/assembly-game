@@ -8,8 +8,10 @@ DATASEG
 
 ;x dw 0
 ;y dw 0
-sqrx dw 0
-sqry dw 0
+sqrX dw 0
+sqrY dw 0
+sqrXend dw 0
+sqrYend dw 0
 TurnsNum db 0
 color db 15
 
@@ -54,26 +56,29 @@ proc curosr_position
 endp
 
 proc draw_square 
-    push ax
-    mov [color], 44h
-    mov ax, [sqrx]
-    add ax, 20
-    mov bx, [sqry]
-    sub bx, 20
-    mov cx, [sqrx]
-    mov dx, [sqry]
-ROW:
-    call color_pixel
-    inc cx
-    cmp ax,cx
-    jne ROW
-FULL:
-    dec dx
-    jmp ROW
-    cmp dx, bx
-    jne FULL
+    mov al, 44h
+    mov ah, 0ch
+    mov cx, [sqrX]
+    mov dx, [sqrY]
+    add cx, 20
+    sub dx, 20
+    mov [sqrXend], cx
+    mov [sqrYend], dx
+    mov cx, [sqrX]
+    mov dx, [sqrY]
+    ROW:
+        int 10h
+        inc cx
+        cmp cx, [sqrXend]
+        JLE ROW
+    FULL:
+        mov cx, [sqrX]
+        sub dx, 1
+        cmp dx, [sqrYend]
+        JNE ROW
     ret
 endp
+
 
 proc calc_line
     push bx
@@ -89,8 +94,9 @@ Start:
     mov ax, @data
     mov ds, ax
 	call enter_graphic_mode
-    mov [sqrx], 180
-    mov [sqry], 100
+DrawRow:
+    mov [sqrX], 180
+    mov [sqrY], 100
     call draw_square
 ColorCurs:
     xor bx,bx
