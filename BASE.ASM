@@ -32,36 +32,35 @@ proc enter_text_mode
 endp
 
 proc color_pixel
-    push bx
-    push cx
-    push dx
-
-    mov bh, 0h 
-;    mov cx, [x]
-;    mov dx, [y]
+    
     mov al, [color]
-    mov ah, 0ch 
+    mov ah, 0ch
     int 10h
-
-    pop dx
-    pop cx
-    pop bx
     ret
 endp
 
 proc curosr_position
 	mov ax, 0003h
 	int 33h
+    mov ax, cx
+    mov bh, 2
+    div bh
+    mov ch, 0
+    mov cl, al
 	ret
 endp
 
-proc draw_square 
-    mov al, 44h
+proc draw_square
+    push ax
+    push cx
+    mov al, [color]
     mov ah, 0ch
     mov cx, [sqrX]
     mov dx, [sqrY]
-    add cx, 20
-    sub dx, 20
+    add cx, 38
+    sub cx, bx
+    add dx, 20
+    sub dx, bx
     mov [sqrXend], cx
     mov [sqrYend], dx
     mov cx, [sqrX]
@@ -73,39 +72,88 @@ proc draw_square
         JLE ROW
     FULL:
         mov cx, [sqrX]
-        sub dx, 1
+        inc dx
         cmp dx, [sqrYend]
         JNE ROW
+    pop cx
+    pop ax
+    ret
+endp
+
+proc row_of_squares
+    DrawRow:
+        mov [color], 44h
+        xor ax, ax
+        xor cx, cx
+        mov [sqrY], bx
+        xor bx, bx
+    OneSqr:
+        mov [sqrX], ax
+        call draw_square
+        add ax, 40
+        inc cx
+        cmp cx, 8
+        JNE OneSqr
+    DrawRow1:
+        mov [color], 3
+        mov ax, 1
+        xor cx, cx
+        mov bx, 2
+        add [sqrY], 1
+    OneSqr1:
+        mov [sqrX], ax
+        call draw_square
+        add ax, 40
+        inc cx
+        cmp cx, 8
+        JNE OneSqr1
+
+    ret
+endp
+
+proc draw_ball
+    call color_pixel
+    inc cx
+    call color_pixel
+    sub cx, 2
+    call color_pixel
+    inc cx
+    inc dx
+    call color_pixel
+    sub dx, 2
+    call color_pixel
     ret
 endp
 
 
-proc calc_line
-    push bx
-    push cx
-    push dx
-    mov cx,cx
-    pop dx
-    pop cx
-    pop dx
-endp
 
 Start:
     mov ax, @data
     mov ds, ax
 	call enter_graphic_mode
-DrawRow:
-    mov [sqrX], 180
-    mov [sqrY], 100
-    call draw_square
+    mov cx, 155
+    mov dx, 190
+    mov [color], 3h
+    call draw_ball
+    mov [color], 0Fh
+
+RowDraw:
+    mov bx, 0
+    call row_of_squares
+    mov bx, 21
+    call row_of_squares
+    mov bx, 42
+    call row_of_squares
+
+
 ColorCurs:
-    xor bx,bx
 	call curosr_position
-	call color_pixel
+	call draw_ball
     cmp bl, 1
-    je continue
+    je Line
     loop ColorCurs
-continue:
+Line:
+    sub dx, 200
     inc [TurnsNum]
 Exit:
     mov ax, 4C00h
