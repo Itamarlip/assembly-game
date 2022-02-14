@@ -212,6 +212,7 @@ proc shoot_ball
         call wait_shot
         pop dx
         pop cx
+        call detecte_collision
         cmp ax, 70
         jle dirleft
         jmp end_shot
@@ -268,10 +269,11 @@ endp
 proc detecte_collision
     push ax
     push bx
-    cmp cx, 3
+    cmp cx, 10
     jle hit_left
-    cmp cx, 317
+    cmp cx, 310
     jge hit_right
+    jmp end_coll
     hit_left:
         mov [sideOfShot], 1
         jmp end_coll
@@ -316,22 +318,22 @@ RowDraw:
     mov bx, 0
     call row_of_squares
 
-Line:
-    mov [VeloX], 3
-    mov [VeloY], 3
-    call decide_half
-    call shoot_ball
 
 ColorCurs:
     xor bx,bx
     mov [color], 44h
 	call Cursor_Position
-	call draw_ball
+	;call draw_ball
     cmp bx, 1
     je Line
     loop ColorCurs
 
 
+Line:
+    mov [VeloX], 3
+    mov [VeloY], 3
+    call decide_half
+    call shoot_ball
 
 
 
