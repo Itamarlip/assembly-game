@@ -27,6 +27,7 @@ rowsOfsqrs dw 0
 msg  db  'Rules:                                  --------------------------------------    Aim with your mouse,                    press to shoot the ball.                Your goal is to destroy the squares     before they hit the floor.              The squares will go down once in 3      turns$' ,0 
 len  equ  $ - msg        
 NextRandom dw 0    
+dblCx dw 0
 
 CODESEG
 
@@ -56,6 +57,7 @@ endp
 proc Cursor_Position
 	mov ax, 0003h
 	int 33h
+    mov [dblCx], cx
     push bx
     push dx
     mov dx, 0
@@ -365,7 +367,6 @@ proc left_shoot_down
     call draw_ball
     sub cx, [VeloX]
     sub dx, [VeloY]
-    inc ax
     push cx
     push dx
     mov cx, 160
@@ -387,7 +388,6 @@ proc right_shoot_down
     call draw_ball
     sub cx, [VeloX]
     add dx, [VeloY]
-    inc ax
     push cx
     push dx
     mov cx, 160
@@ -406,6 +406,7 @@ proc shoot_ball
     mov cx, 160
     mov dx, 190
     sides:
+        call show_score
         cmp [turnDone], 1
         je end_shot
         call detecte_collision
@@ -461,17 +462,21 @@ proc detecte_collision
     push bx
     push cx
     push dx
+
     hit_square:
-        mov bx, 1
+        push cx
         xor ax, ax
+        mov cx, [dblCx]
+        mov bx, 0
         mov ah, 0Dh
         int 10
-        cmp al, 0
-        jne sqrcoll
-        ;cmp al, 3h
-        ;je sqrcoll
+        pop cx
+        cmp al, 5
+        je sqrcoll
+        cmp al, 3h
+        je sqrcoll
         jmp hit_check
-        sqrcoll:
+        sqrcoll:  
             call collision_with_square
             call show_rules
             jmp end_coll
@@ -691,6 +696,10 @@ proc row_down
 endp
 
 proc show_score
+    push ax
+    push bx
+    push cx
+    push dx
     mov ah, 02h 
 	mov bh, 0 
 	mov dh, 01h 
@@ -700,10 +709,18 @@ proc show_score
 	mov ah, 09h 
 	lea dx, [TurnsNum]
 	int 21h
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     ret
 endp
 
 proc show_rules
+    push ax
+    push bx
+    push cx
+    push dx
     mov ah, 02h 
 	mov bh, 0 
 	mov dh, 01h 
@@ -713,6 +730,10 @@ proc show_rules
 	mov ah, 09h 
 	lea dx, [msg]
 	int 21h
+    pop dx
+    pop cx
+    pop bx
+    pop ax
     ret
 endp
 
@@ -721,13 +742,13 @@ Start:
     mov ds, ax
 	call enter_graphic_mode
 Rules:
-    ;call show_rules
-    ;call Cursor_Position
-    ;cmp bx, 1
-    ;jne Rules
-    ;call enter_graphic_mode
-    ;xor bx, bx
-    ;call wait_a_sec
+    call show_rules
+    call Cursor_Position
+    cmp bx, 2
+    jne Rules
+    call enter_graphic_mode
+    xor bx, bx
+    call wait_a_sec
 
     mov cx, 160
     mov dx, 190
@@ -735,37 +756,27 @@ Rules:
     call draw_ball
     mov [color], 0Fh
     
+    
 RowDraw:
     xor bx, bx
     call row_of_squares
     call decide_sqrs
-
     mov bx, 40
-    call row_down
-    ;call show_score
+    call show_score
     xor bx, bx
-
-
 
 waitToShot:
     xor bx,bx
     mov [color], 44h
 	call Cursor_Position
-	;call draw_ball
-    ;mov bx, 1
     cmp bx, 1
     je oneShot
     loop waitToShot
 
 
 oneShot:
-    ;mov cx, 200
-    ;mov dx, 100
-    ;mov [VeloX],2
-    ;mov [VeloY],1
-    ;mov [sideOfShot], 1
     mov [TurnsNum], 0
-    ;call show_score
+    call show_score
     call Cursor_Position
     call decide_half
     call calculate_velo
