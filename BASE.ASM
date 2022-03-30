@@ -24,7 +24,7 @@ diffY dw 0
 turnDone dw 0
 amountOfDraws dw 0
 rowsOfsqrs dw 0
-msg  db  'Rules:                                  --------------------------------------    Aim with your mouse,                    press to shoot the ball.                Your goal is to destroy the squares     before they hit the floor.              The squares will go down once in 3      turns$' ,0 
+msg  db  'Rules:                                      Aim with your mouse,                    press to shoot the ball.                Your goal is to destroy the             squares before they hit the floor.      The squares will go down every          turn.$' ,0 
 len  equ  $ - msg        
 NextRandom dw 0    
 dblCx dw 0
@@ -462,7 +462,6 @@ proc detecte_collision
     push bx
     push cx
     push dx
-
     hit_square:
         push cx
         xor ax, ax
@@ -487,7 +486,7 @@ proc detecte_collision
         jge hit_right
         cmp dx, 4d
         jle hit_up
-        cmp dx, 190d
+        cmp dx, 195d
         jg hit_down
         jmp end_coll
         hit_left:
@@ -750,6 +749,7 @@ Rules:
     xor bx, bx
     call wait_a_sec
 
+startPos:
     mov cx, 160
     mov dx, 190
     mov [color], 3h
@@ -764,6 +764,7 @@ RowDraw:
     mov bx, 40
     call show_score
     xor bx, bx
+    mov [TurnsNum], 0
 
 waitToShot:
     xor bx,bx
@@ -775,13 +776,16 @@ waitToShot:
 
 
 oneShot:
-    mov [TurnsNum], 0
     call show_score
     call Cursor_Position
     call decide_half
     call calculate_velo
     call shoot_ball
-
+    add [TurnsNum], 1
+    call row_down
+    cmp [turnDone], 1
+    je Exit
+    jmp waitToShot
 
 endOfTurn:
 
